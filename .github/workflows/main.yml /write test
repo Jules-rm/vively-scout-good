@@ -1,0 +1,32 @@
+name: Write Test to Google Sheet
+
+on:
+  workflow_dispatch:  # handmatig starten
+  schedule:
+    - cron: '30 7 * * *'  # draait elke dag om 08:30 NL tijd
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Write service account JSON to file
+        run: |
+          echo "$GCP_SA_JSON" > sa.json
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/sa.json" >> $GITHUB_ENV
+
+      - name: Run test script
+        env:
+          GCP_SA_JSON: ${{ secrets.GCP_SA_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+        run: python src/test_write_sheet.py
